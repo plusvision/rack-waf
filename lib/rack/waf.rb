@@ -11,7 +11,7 @@ module Rack
     class Error < StandardError; end
 
     class << self
-      attr_accessor :enabled
+      attr_accessor :enabled, :count_only
       attr_reader :configuration
 
       extend Forwardable
@@ -22,7 +22,8 @@ module Rack
       )
     end
 
-    @enabled = true
+    @enabled       = true
+    @count_only    = false
     @configuration = Configuration.new
 
     attr_reader :configuration
@@ -39,12 +40,12 @@ module Rack
 
       if configuration.blocked_http_method?(request.request_method)
         log_warn("http_method", request)
-        return [405, { "Content-Type" => "text/plain" }, ["Method Not Allowed"]]
+        return [405, { "Content-Type" => "text/plain" }, ["Method Not Allowed"]] unless self.class.count_only
       end
 
       if configuration.blocked_content_type?(request.content_type || "application/octet_stream")
         log_warn("content_type", request)
-        return [415, { "Content-Type" => "text/plain" }, ["Unsupported Media Type"]]
+        return [415, { "Content-Type" => "text/plain" }, ["Unsupported Media Type"]] unless self.class.count_only
       end
 
       @app.call(env)
@@ -56,7 +57,7 @@ module Rack
       logger = request.logger || ActionView::Base.logger || Rails.logger
       return unless logger
 
-      logger.warn("[#{self.class.name}] Blocked reason: #{reason} request: #{request.request_method} \"#{request.fullpath}\" content_type: \"#{request.content_type || "none"}\" from #{request.ip}")
+      logger.warn("[#{self.class.name}] #{self.class.count_only ? "Counted" : "Blocked"} reason: #{reason} request: #{request.request_method} \"#{request.fullpath}\" content_type: \"#{request.content_type || "none"}\" from #{request.ip}")
     end
   end
 end
