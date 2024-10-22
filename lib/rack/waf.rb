@@ -18,7 +18,9 @@ module Rack
       def_delegators(
         :@configuration,
         :allowlist_http_method,
-        :allowlist_mime_type
+        :allowlist_http_method=,
+        :allowlist_mime_type,
+        :allowlist_mime_type=
       )
     end
 
